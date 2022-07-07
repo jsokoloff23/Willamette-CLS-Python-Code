@@ -44,6 +44,7 @@ class MMHardwareCommands(object):
         self.prop_cell_input_1 = "EditCellInput1"
         self.prop_cell_input_2 = "EditCellInput2"
         self.val_input = "0 - input"
+        self.val_constant = "0 - constant"
         self.val_output = "2 - output (push-pull)"
         self.val_and = "5 - 2-input AND"
         self.val_or = "6 - 2-input OR"
@@ -139,6 +140,52 @@ class MMHardwareCommands(object):
         self.set_property(self.plc_name, self.prop_cell_config, self.addr_one_shot)
         self.set_property(self.plc_name, self.prop_cell_input_1, 0)
         self.set_property(self.plc_name, self.prop_cell_input_2, 0)
+    
+    def initialize_plc_for_continuous_lsrm(self, framerate):
+        # Same as the last PLC function except it pulses on its own.
+
+        trigger_pulse_width = 4
+        frame_interval = np.ceil(1.0 / framerate * 1000 * 4)
+
+        self.set_property(self.plc_name, self.prop_position, self.addr_delay_1)
+        self.set_property(self.plc_name, self.prop_cell_type, self.val_delay)
+        self.set_property(self.plc_name, self.prop_cell_config, 0)
+        self.set_property(self.plc_name, self.prop_cell_input_1, self.addr_constant)
+        self.set_property(self.plc_name, self.prop_cell_input_2, self.addr_clk)
+
+        self.set_property(self.plc_name, self.prop_position, self.addr_or)
+        self.set_property(self.plc_name, self.prop_cell_type, self.val_or)
+        self.set_property(self.plc_name, self.prop_cell_config, 0)
+        self.set_property(self.plc_name, self.prop_cell_input_1, self.addr_delay_1)
+        self.set_property(self.plc_name, self.prop_cell_input_2, self.addr_delay_2)
+
+        self.set_property(self.plc_name, self.prop_position, self.addr_and)
+        self.set_property(self.plc_name, self.prop_cell_type, self.val_and)
+        self.set_property(self.plc_name, self.prop_cell_config, 0)
+        self.set_property(self.plc_name, self.prop_cell_input_1, self.addr_or)
+        self.set_property(self.plc_name, self.prop_cell_input_2, self.addr_constant)
+
+        self.set_property(self.plc_name, self.prop_position, self.addr_delay_2)
+        self.set_property(self.plc_name, self.prop_cell_type, self.val_delay)
+        self.set_property(self.plc_name, self.prop_cell_config, frame_interval)
+        self.set_property(self.plc_name, self.prop_cell_input_1, self.addr_and)
+        self.set_property(self.plc_name, self.prop_cell_input_2, self.addr_clk)
+
+        self.set_property(self.plc_name, self.prop_position, self.addr_one_shot)
+        self.set_property(self.plc_name, self.prop_cell_type, self.val_one_shot)
+        self.set_property(self.plc_name, self.prop_cell_config, trigger_pulse_width)
+        self.set_property(self.plc_name, self.prop_cell_input_1, self.addr_delay_2)
+        self.set_property(self.plc_name, self.prop_cell_input_2, self.addr_clk)
+
+        self.set_property(self.plc_name, self.prop_position, self.addr_bnc_1)
+        self.set_property(self.plc_name, self.prop_cell_type, self.val_output)
+        self.set_property(self.plc_name, self.prop_cell_config, self.addr_one_shot)
+        self.set_property(self.plc_name, self.prop_cell_input_1, 0)
+        self.set_property(self.plc_name, self.prop_cell_input_2, 0)
+
+        self.set_property(self.plc_name, self.prop_position, self.addr_constant)
+        self.set_property(self.plc_name, self.prop_cell_type, self.val_constant)
+        self.set_property(self.plc_name, self.prop_cell_config, 1)
 
     def set_dslm_camera_properties(self, z_scan_speed):
         #Sets camera properties for a DSLM zstack

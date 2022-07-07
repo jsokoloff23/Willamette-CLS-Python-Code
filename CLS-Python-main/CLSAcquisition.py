@@ -221,14 +221,15 @@ class Acquisition(threading.Thread):
                             data.close()
                             return
 
-                        elif timeout > 500:
+                        elif timeout > 100:
+                            print("TIMEOUT")
+                            self.mm_hardware_commands.initialize_plc_for_continuous_lsrm(20)
                             self.core.stop_sequence_acquisition()
                             self.core.clear_circular_buffer()
-                            if cur_frame < num_frames:
-                                self.acquisition_dialog.acquisition_label.setText("Timepoint " + str(
-                                    num_time_points + 1) + " " + channel + " z stack failed, not enough images acquired")
-                                self.studio.logs().log_message("Timepoint " + str(num_time_points + 1) + " " + channel
-                                                               + " z stack failed, not enough images acquired")
+                            self.acquisition_dialog.acquisition_label.setText("Timepoint " + str(
+                                num_time_points + 1) + " " + channel + " z stack failed, not enough images acquired")
+                            self.studio.logs().log_message("Timepoint " + str(num_time_points + 1) + " " + channel
+                                                            + " z stack failed, not enough images acquired")
 
                         elif self.core.get_remaining_image_count() > 0:
                             tagged = self.core.pop_next_tagged_image()
@@ -258,15 +259,14 @@ class Acquisition(threading.Thread):
                             self.core.sleep(5)
                             timeout += 1
 
-                    print('stack done')
                     self.core.stop_sequence_acquisition()
                     self.core.clear_circular_buffer()
                     data.close()
                     
                 #Waits until stage and camera aren't busy before continuing.
+                self.core.wait_for_device(self.mm_hardware_commands.cam_name)
                 self.core.wait_for_device(self.mm_hardware_commands.zy_stage_name)
                 self.core.wait_for_device(self.mm_hardware_commands.x_stage_name)
-                self.core.wait_for_device(self.mm_hardware_commands.cam_name)
 
                 if self.abort_boolean:
                     data.close()

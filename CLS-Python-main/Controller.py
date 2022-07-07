@@ -295,7 +295,9 @@ class CLSController(object):
         #Sets acquisition settings dialog states
         self.acquisition_settings_dialog.time_points_check_box.setChecked(self.acquisition_settings.time_points_boolean)
         self.acquisition_settings_dialog.num_time_points_line_edit.setEnabled(self.acquisition_settings.time_points_boolean)
+        self.acquisition_settings_dialog.num_time_points_line_edit.setText(str(self.acquisition_settings.num_time_points))
         self.acquisition_settings_dialog.time_points_interval_line_edit.setEnabled(self.acquisition_settings.time_points_boolean)
+        self.acquisition_settings_dialog.time_points_interval_line_edit.setText(str(self.acquisition_settings.time_points_interval))
         self.acquisition_settings_dialog.start_acquisition_button.setEnabled(False)
         self.acquisition_settings_dialog.num_images_per_line_edit.setEnabled(False)
         self.acquisition_settings_dialog.total_images_line_edit.setEnabled(False)
@@ -490,15 +492,18 @@ class CLSController(object):
 
     def calculate_num_images(self):
         #Calculates number of images in acquisition for use in acquisition settings dialog
-
+        
+        #This image size is estimated based on tif file size saved by micromanager. May not
+        #be completely accurate
+        image_size = 10.84
         if self.acquisition_settings.time_points_boolean:
             total_images = self.num_images_per * self.acquisition_settings.num_time_points
             self.acquisition_settings_dialog.total_images_line_edit.setText(str(total_images))
-            memory = (total_images * 8.08) / 1000
+            memory = (total_images * image_size) / 1000
             self.acquisition_settings_dialog.memory_line_edit.setText(("%.3f" % memory))
         else:
             self.acquisition_settings_dialog.total_images_line_edit.setText(str(self.num_images_per))
-            memory = (self.num_images_per * 8.08) / 1000
+            memory = (self.num_images_per * image_size) / 1000
             self.acquisition_settings_dialog.memory_line_edit.setText(("%.3f" % memory))
 
     def go_to_button_clicked(self):
@@ -973,6 +978,7 @@ class CLSController(object):
         self.acquisition_settings.time_points_boolean = time_points_boolean
         self.acquisition_settings_dialog.num_time_points_line_edit.setEnabled(time_points_boolean)
         self.acquisition_settings_dialog.time_points_interval_line_edit.setEnabled(time_points_boolean)
+        self.write_to_config()
         self.calculate_num_images()
 
     def lsrm_check_clicked(self):
@@ -991,6 +997,7 @@ class CLSController(object):
         #Sets number of time points
         try:
             self.acquisition_settings.num_time_points = int(self.acquisition_settings_dialog.num_time_points_line_edit.text())
+            self.write_to_config()
             self.calculate_num_images()
                 
         except ValueError:
@@ -1000,5 +1007,6 @@ class CLSController(object):
         #Sets interval between time points
         try:
             self.acquisition_settings.time_points_interval = int(self.acquisition_settings_dialog.time_points_interval_line_edit.text())
+            self.write_to_config()
         except ValueError:
             return 'not a number'
