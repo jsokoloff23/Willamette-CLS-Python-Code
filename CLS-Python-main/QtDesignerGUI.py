@@ -85,7 +85,7 @@ class Ui_CLSAcquisitionSettingsDialog(object):
         CLSAcquisitionSettingsDialog.setObjectName("CLSAcquisitionSettingsDialog")
         CLSAcquisitionSettingsDialog.resize(416, 433)
         self.time_points_check_box = QtWidgets.QCheckBox(CLSAcquisitionSettingsDialog)
-        self.time_points_check_box.setGeometry(QtCore.QRect(60, 80, 81, 17))
+        self.time_points_check_box.setGeometry(QtCore.QRect(60, 80, 111, 17))
         self.time_points_check_box.setObjectName("time_points_check_box")
         self.num_time_points_line_edit = QtWidgets.QLineEdit(CLSAcquisitionSettingsDialog)
         self.num_time_points_line_edit.setGeometry(QtCore.QRect(80, 110, 61, 20))
@@ -197,6 +197,9 @@ class Ui_CLSAcquisitionSettingsDialog(object):
         self.memory_unit_label.setGeometry(QtCore.QRect(170, 270, 21, 16))
         self.memory_unit_label.setAlignment(QtCore.Qt.AlignCenter)
         self.memory_unit_label.setObjectName("memory_unit_label")
+        self.sequential_check_box = QtWidgets.QCheckBox(CLSAcquisitionSettingsDialog)
+        self.sequential_check_box.setGeometry(QtCore.QRect(20, 170, 221, 17))
+        self.sequential_check_box.setObjectName("sequential_check_box")
 
         self.retranslateUi(CLSAcquisitionSettingsDialog)
         QtCore.QMetaObject.connectSlotsByName(CLSAcquisitionSettingsDialog)
@@ -222,6 +225,7 @@ class Ui_CLSAcquisitionSettingsDialog(object):
         self.num_images_per_label.setText(_translate("CLSAcquisitionSettingsDialog", "Images per point:"))
         self.label_6.setText(_translate("CLSAcquisitionSettingsDialog", "Acquisition Settings"))
         self.memory_unit_label.setText(_translate("CLSAcquisitionSettingsDialog", "Gb"))
+        self.sequential_check_box.setText(_translate("CLSAcquisitionSettingsDialog", "Sequential Time Seires"))
 
 
 class Ui_CLSDialog(object):

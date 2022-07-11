@@ -220,6 +220,7 @@ class CLSController(object):
             self.channel_move_down_button_clicked)
         self.acquisition_settings_dialog.start_acquisition_button.clicked.connect(self.start_acquisition_button_clicked)
         self.acquisition_settings_dialog.time_points_check_box.clicked.connect(self.time_points_check_clicked)
+        self.acquisition_settings_dialog.sequential_check_box.clicked.connect(self.sequential_check_clicked)
         self.acquisition_settings_dialog.lsrm_check_box.clicked.connect(self.lsrm_check_clicked)
         self.acquisition_settings_dialog.stage_speed_combo_box.activated.connect(self.stage_speed_combo_box_clicked)
 
@@ -246,6 +247,7 @@ class CLSController(object):
         config.set(section, 'num_time', str(self.acquisition_settings.num_time_points))
         config.set(section, 'scan_speed', str(self.acquisition_settings.z_scan_speed))
         config.set(section, 'lsrm_bool', str(self.acquisition_settings.lightsheet_mode_boolean))
+        config.set(section, 'sequential_bool', str(self.acquisition_settings.sequential_time_series_boolean))
 
         
         for sample_index in range(self.acquisition_settings.sample_dimension):
@@ -289,6 +291,7 @@ class CLSController(object):
                 self.acquisition_settings.num_time_points = config.getint(section, 'num_time')
                 self.acquisition_settings.z_scan_speed = config.getfloat(section, 'scan_speed')
                 self.acquisition_settings.lightsheet_mode_boolean = config.getboolean(section, 'lsrm_bool')
+                self.acquisition_settings.sequential_time_series_boolean = config.getboolean(section, 'sequential_bool')
             except:
                 print('section line missing')
         
@@ -298,6 +301,7 @@ class CLSController(object):
         self.acquisition_settings_dialog.num_time_points_line_edit.setText(str(self.acquisition_settings.num_time_points))
         self.acquisition_settings_dialog.time_points_interval_line_edit.setEnabled(self.acquisition_settings.time_points_boolean)
         self.acquisition_settings_dialog.time_points_interval_line_edit.setText(str(self.acquisition_settings.time_points_interval))
+        self.acquisition_settings_dialog.sequential_check_box.setChecked(self.acquisition_settings.sequential_time_series_boolean)
         self.acquisition_settings_dialog.start_acquisition_button.setEnabled(False)
         self.acquisition_settings_dialog.num_images_per_line_edit.setEnabled(False)
         self.acquisition_settings_dialog.total_images_line_edit.setEnabled(False)
@@ -978,8 +982,13 @@ class CLSController(object):
         self.acquisition_settings.time_points_boolean = time_points_boolean
         self.acquisition_settings_dialog.num_time_points_line_edit.setEnabled(time_points_boolean)
         self.acquisition_settings_dialog.time_points_interval_line_edit.setEnabled(time_points_boolean)
+        self.acquisition_settings_dialog.sequential_check_box.setEnabled(time_points_boolean)
         self.write_to_config()
         self.calculate_num_images()
+    
+    def sequential_check_clicked(self):
+        self.acquisition_settings.sequential_time_series_boolean = self.acquisition_settings_dialog.sequential_check_box.isChecked()
+        self.write_to_config()
 
     def lsrm_check_clicked(self):
         #Enables LSRM in acquisition

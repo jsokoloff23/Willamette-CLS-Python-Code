@@ -37,6 +37,8 @@ class AcquisitionSettings(object):
         self.z_scan_speed = 0.030
         self.lightsheet_mode_boolean = False
 
+        self.sequential_time_series_boolean = False
+
     def update_region_settings_list(self, region_settings, sample_num, region_num):
         self.region_settings_list[sample_num][region_num] = region_settings
     

@@ -140,6 +140,15 @@ class MMHardwareCommands(object):
         self.set_property(self.plc_name, self.prop_cell_config, self.addr_one_shot)
         self.set_property(self.plc_name, self.prop_cell_input_1, 0)
         self.set_property(self.plc_name, self.prop_cell_input_2, 0)
+
+    def set_plc_frame_interval(self, step_size, z_scan_speed):
+        frame_interval = np.ceil((step_size / z_scan_speed) * 4)
+
+        self.set_property(self.plc_name, self.prop_position, self.addr_delay_2)
+        self.set_property(self.plc_name, self.prop_cell_type, self.val_delay)
+        self.set_property(self.plc_name, self.prop_cell_config, frame_interval)
+        self.set_property(self.plc_name, self.prop_cell_input_1, self.addr_and)
+        self.set_property(self.plc_name, self.prop_cell_input_2, self.addr_clk)
     
     def initialize_plc_for_continuous_lsrm(self, framerate):
         # Same as the last PLC function except it pulses on its own.
@@ -189,6 +198,7 @@ class MMHardwareCommands(object):
 
     def set_dslm_camera_properties(self, z_scan_speed):
         #Sets camera properties for a DSLM zstack
+        self.core.wait_for_device(self.cam_name)
         self.studio.live().set_live_mode_on(False)
         exposure = 20
         self.core.set_exposure(exposure)
@@ -196,17 +206,22 @@ class MMHardwareCommands(object):
 
     def set_default_camera_properties(self, exposure):
         #Sets camera properties to default.
+        self.core.wait_for_device(self.cam_name)
         self.studio.live().set_live_mode_on(False)
         self.set_property(self.cam_name, self.trigger_mode_prop, self.default_trigger_mode)
         self.core.set_exposure(exposure)
 
     def set_x_stage_speed(self, speed):
         #Sets x-stage speed
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         self.set_property(self.x_stage_name, self.x_speed_property, speed)
 
     def set_zy_stage_speed(self, speed):
         #Sets zy-stage speed. Used to switch between z-stage speed when
         #moving to new position and the speed used during scans.
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         self.set_property(self.zy_stage_name, self.z_speed_property, speed)
 
     def scan_setup(self, start_z, end_z):
@@ -223,6 +238,8 @@ class MMHardwareCommands(object):
            port goes high. This is what triggers the PLC to pulse. Once it reaches
            the end, TTL goes low and the stage resets to the start position.
         """
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         start_z = np.round(start_z) / 1000.
         end_z = np.round(end_z) / 1000.
         scan_r_properties = "SCANR X=" + str(start_z) + " Y=" + str(end_z)
@@ -231,11 +248,17 @@ class MMHardwareCommands(object):
 
     def scan_start(self):
         #Start scan with properties set in scan_setup.
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         self.set_property(self.zy_stage_name, self.serial, self.scan_start_command)
     
     def move_stage(self, x_position, y_position, z_position):
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         self.set_zy_stage_speed(self.zy_stage_speed)
         self.set_x_stage_speed(self.x_stage_speed)
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
        
         #Reason for this is to ensure capillaries dpn't hit the objective. These conditions
         #should be changed to match the geometry of the holder.
@@ -253,16 +276,22 @@ class MMHardwareCommands(object):
 
     def get_x_position(self):
         #Gets current x-position from xy-stage
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         x_pos =  int(np.round(self.core.get_position(self.x_stage_name)))
         return x_pos
 
     def get_y_position(self):
         #Gets current y-position from xy-stage
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         y_pos =  int(np.round(self.core.get_y_position(self.zy_stage_name)))
         return y_pos
 
     def get_z_position(self):
         #Gets current y-position from z-stage
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         z_pos =  int(np.round(self.core.get_x_position(self.zy_stage_name)))
         return z_pos
     
@@ -270,11 +299,15 @@ class MMHardwareCommands(object):
         #The joystick tends to bug out after the SCAN command. This resets
         #the joystick so that it works correctly. See the ASI documentation 
         #for more details.
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         self.set_property(self.zy_stage_name, self.serial, "J X+ Y+ Z+")
         self.core.wait_for_device(self.zy_stage_name)
         self.set_property(self.zy_stage_name, self.serial, "J X=4 Y=3 Z=2")
         self.core.wait_for_device(self.zy_stage_name)
 
     def reset_stage(self):
+        self.core.wait_for_device(self.zy_stage_name)
+        self.core.wait_for_device(self.x_stage_name)
         self.set_property(self.zy_stage_name, self.serial, "RESET")
         self.core.wait_for_device(self.zy_stage_name)
