@@ -180,7 +180,7 @@ class Acquisition(threading.Thread):
         # This buffer is so the stage overshoots a little bit to ensure enough images are captured
         # during the sequence acquisition to end naturally. This sucks, but I think it's necessary
         # with how the acquisition is currently performed.
-        scan_buffer = 5
+        scan_buffer = 10
         if z_start <= z_end:
             z_start -= scan_buffer
             z_end += scan_buffer
@@ -206,14 +206,15 @@ class Acquisition(threading.Thread):
                 timeout = 0
                 cur_frame = 0
 
+                self.mm_hardware_commands.set_zy_stage_speed(self.acquisition_settings.z_scan_speed)
+                self.mm_hardware_commands.scan_setup(z_start, z_end)
+
                 self.acquisition_dialog.acquisition_label.setText("Acquiring " + channel + " z stack")
                 self.core.set_config(self.acquisition_settings.channel_group_name, channel)
                 self.core.start_sequence_acquisition(int(num_frames), np.double(0), False)
                 self.core.wait_for_device(self.mm_hardware_commands.cam_name)
 
                 #Sets correct scan stage speed and starts scan
-                self.mm_hardware_commands.set_zy_stage_speed(self.acquisition_settings.z_scan_speed)
-                self.mm_hardware_commands.scan_setup(z_start, z_end)
                 self.mm_hardware_commands.scan_start()
 
                 while self.core.get_remaining_image_count() > 0 or self.core.is_sequence_running():
@@ -224,17 +225,17 @@ class Acquisition(threading.Thread):
                             return
 
                         elif timeout >= 600:
-                            print("Sample " + str(sample_num + 1) + " Region " + str(region_num + 1) + " Timepoint " + str(
-                                num_time_points + 1) + " " + channel + " z stack failed, not enough images acquired")
+                            error = "Sample " + str(sample_num + 1) + " Region " + str(region_num + 1) + " Timepoint " + str(
+                            num_time_points + 1) + " " + channel + " z stack failed, not enough images acquired, missed " + str(num_frames - cur_frame) + " images"
+
+                            print(error)
+                            self.acquisition_dialog.acquisition_label.setText(error)
+                            self.studio.logs().log_message(error)
+
                             self.mm_hardware_commands.initialize_plc_for_continuous_lsrm(20)
                             self.core.stop_sequence_acquisition()
                             self.core.clear_circular_buffer()
                             self.mm_hardware_commands.initialize_plc_for_scan(step_size, self.acquisition_settings.z_scan_speed)
-                            self.acquisition_dialog.acquisition_label.setText("Sample " + str(sample_num + 1) + " Region " + str(region_num + 1) + " Timepoint " + str(
-                                num_time_points + 1) + " " + channel + " z stack failed, not enough images acquired")
-                            self.studio.logs().log_message("Sample " + str(sample_num + 1) + "Region " + str(region_num + 1) + "Timepoint " + str(
-                                num_time_points + 1) + " " + channel + " z stack failed, not enough images acquired")
-                            
                             break
 
                         elif self.core.get_remaining_image_count() > 0:
@@ -369,8 +370,8 @@ class Acquisition(threading.Thread):
 
                 time_points_left = self.acquisition_settings.num_time_points - num_time_points
                 if self.acquisition_settings.time_points_boolean and time_points_left > 1:
-                    self.acquisition_dialog.acquisition_label.setText("Moving back to start position...")
 
+                    self.acquisition_dialog.acquisition_label.setText("Moving back to start position...")
                     x_pos = self.region_settings_list[0][0].x_position
                     y_pos = self.region_settings_list[0][0].y_position
                     z_pos = self.region_settings_list[0][0].z_position
@@ -403,9 +404,17 @@ class Acquisition(threading.Thread):
                             return
         else:
             for sample_num in range(self.acquisition_settings.sample_dimension):
+                if sample_num != 0 and self.region_settings_list[sample_num][0] != 0:
+                    self.acquisition_dialog.acquisition_label.setText("Moving to region...")
+                    x_pos = self.region_settings_list[sample_num][0].x_position
+                    y_pos = self.region_settings_list[sample_num][0].y_position
+                    z_pos = self.region_settings_list[sample_num][0].z_position
+                    self.mm_hardware_commands.move_stage(x_pos, y_pos, z_pos)
+
                 if self.abort_boolean:
                     self.abort_acquisition()
                     return
+
                 if self.region_settings_list[sample_num][0] != 0:
                     for num_time_points in range(settings_num_time_points):
                         start = time.time_ns()
